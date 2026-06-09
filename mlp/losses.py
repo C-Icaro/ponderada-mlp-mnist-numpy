@@ -30,3 +30,8 @@ def cross_entropy(probs: Array, y: Array, eps: float = 1e-12) -> float:
 def accuracy(probs: Array, y: Array) -> float:
     predictions = np.argmax(probs, axis=1)
     return float(np.mean(predictions == y.ravel()))
+
+
+def softmax_cross_entropy(logits: Array, y: Array) -> tuple[float, Array]:
+    probs = softmax(logits)
+    return cross_entropy(probs, y), probs

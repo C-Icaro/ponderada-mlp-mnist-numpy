@@ -29,6 +29,8 @@ Este README sera atualizado a cada marco relevante. A intencao e deixar claro na
 | Escopo inicial | Enunciado do notebook original em `Downloads` | Leitura inicial falhou porque o terminal PowerShell nao aceita heredoc no estilo Bash | Usar sintaxe nativa do PowerShell para inspecao |
 | Inspecao do enunciado | Requisitos extraidos: 2 camadas ocultas, ReLU, softmax, cross-entropy, SGD, 92%+ | Console em `cp1252` quebrou ao imprimir simbolos matematicos | Forcar stdout UTF-8 nas inspecoes |
 | Repositorio dedicado | Repo publico `C-Icaro/ponderada-mlp-mnist-numpy` | O repo anterior era generico e ja tinha arquivos nao relacionados | Criar repo novo, publico e isolado para a ponderada |
+| Forward pass | `tests/test_forward.py` | Antes de treinar, a rede precisava provar que dimensoes e probabilidades estavam coerentes | Testar logits e soma da softmax antes de implementar backprop |
+| Backpropagation | `tests/test_backprop.py` | A loss do MNIST so aponta que algo esta errado, mas nao onde | Criar gradient check numerico em uma rede pequena |
 
 ## Como rodar
 
