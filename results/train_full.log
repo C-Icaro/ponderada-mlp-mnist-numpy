@@ -1,0 +1,24 @@
+
+== compact_relu_64_32 ==
+epoch 01/8 loss=0.3081 acc=0.9077 val_acc=0.9053
+epoch 02/8 loss=0.2333 acc=0.9320 val_acc=0.9288
+epoch 03/8 loss=0.1940 acc=0.9466 val_acc=0.9404
+epoch 04/8 loss=0.1699 acc=0.9523 val_acc=0.9469
+epoch 05/8 loss=0.1424 acc=0.9556 val_acc=0.9498
+epoch 06/8 loss=0.1345 acc=0.9586 val_acc=0.9550
+epoch 07/8 loss=0.1162 acc=0.9691 val_acc=0.9581
+epoch 08/8 loss=0.1120 acc=0.9676 val_acc=0.9625
+
+== final_relu_128_64 ==
+epoch 01/10 loss=0.2611 acc=0.9217 val_acc=0.9207
+epoch 02/10 loss=0.1779 acc=0.9485 val_acc=0.9425
+epoch 03/10 loss=0.1445 acc=0.9591 val_acc=0.9526
+epoch 04/10 loss=0.1131 acc=0.9652 val_acc=0.9592
+epoch 05/10 loss=0.1040 acc=0.9665 val_acc=0.9588
+epoch 06/10 loss=0.0805 acc=0.9765 val_acc=0.9682
+epoch 07/10 loss=0.0748 acc=0.9786 val_acc=0.9691
+epoch 08/10 loss=0.0720 acc=0.9793 val_acc=0.9698
+epoch 09/10 loss=0.0620 acc=0.9831 val_acc=0.9695
+epoch 10/10 loss=0.0506 acc=0.9862 val_acc=0.9709
+
+Resumo salvo em results\summary.json

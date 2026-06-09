@@ -1,0 +1,50 @@
+[
+  {
+    "name": "compact_relu_64_32",
+    "hidden_layers": [
+      64,
+      32
+    ],
+    "activation": "relu",
+    "learning_rate": 0.08,
+    "learning_rate_decay": 0.96,
+    "epochs": 8,
+    "batch_size": 128,
+    "l2": 0.0,
+    "seed": 21,
+    "layer_sizes": [
+      784,
+      64,
+      32,
+      10
+    ],
+    "test_loss": 0.1245667114853859,
+    "test_accuracy": 0.9634,
+    "final_val_accuracy": 0.9625,
+    "final_train_accuracy": 0.9676
+  },
+  {
+    "name": "final_relu_128_64",
+    "hidden_layers": [
+      128,
+      64
+    ],
+    "activation": "relu",
+    "learning_rate": 0.12,
+    "learning_rate_decay": 0.96,
+    "epochs": 10,
+    "batch_size": 128,
+    "l2": 0.0,
+    "seed": 42,
+    "layer_sizes": [
+      784,
+      128,
+      64,
+      10
+    ],
+    "test_loss": 0.08210042119026184,
+    "test_accuracy": 0.9759,
+    "final_val_accuracy": 0.9709,
+    "final_train_accuracy": 0.9862
+  }
+]
