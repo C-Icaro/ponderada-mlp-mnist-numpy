@@ -118,10 +118,12 @@ class MLPClassifier:
         epochs: int = 10,
         batch_size: int = 128,
         learning_rate: float = 0.1,
+        learning_rate_decay: float = 1.0,
         l2: float = 0.0,
         momentum: float = 0.0,
         shuffle: bool = True,
         seed: int = 42,
+        train_metric_sample_size: int | None = None,
         verbose: bool = True,
     ) -> list[dict[str, float]]:
         if epochs <= 0:
@@ -135,6 +137,7 @@ class MLPClassifier:
         n_samples = X_train.shape[0]
 
         for epoch in range(1, epochs + 1):
+            optimizer.learning_rate = learning_rate * (learning_rate_decay ** (epoch - 1))
             indices = np.arange(n_samples)
             if shuffle:
                 rng.shuffle(indices)
@@ -148,9 +151,13 @@ class MLPClassifier:
                 optimizer.step(self.params, grads)
                 epoch_losses.append(batch_loss)
 
-            train_metrics = self.evaluate(X_train, y_train, l2=l2)
+            metric_indices = indices
+            if train_metric_sample_size is not None and train_metric_sample_size < n_samples:
+                metric_indices = indices[:train_metric_sample_size]
+            train_metrics = self.evaluate(X_train[metric_indices], y_train[metric_indices], l2=l2)
             row = {
                 "epoch": float(epoch),
+                "learning_rate": float(optimizer.learning_rate),
                 "batch_loss": float(np.mean(epoch_losses)),
                 "train_loss": train_metrics["loss"],
                 "train_accuracy": train_metrics["accuracy"],

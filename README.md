@@ -31,6 +31,7 @@ Este README sera atualizado a cada marco relevante. A intencao e deixar claro na
 | Repositorio dedicado | Repo publico `C-Icaro/ponderada-mlp-mnist-numpy` | O repo anterior era generico e ja tinha arquivos nao relacionados | Criar repo novo, publico e isolado para a ponderada |
 | Forward pass | `tests/test_forward.py` | Antes de treinar, a rede precisava provar que dimensoes e probabilidades estavam coerentes | Testar logits e soma da softmax antes de implementar backprop |
 | Backpropagation | `tests/test_backprop.py` | A loss do MNIST so aponta que algo esta errado, mas nao onde | Criar gradient check numerico em uma rede pequena |
+| Loader e treino | `mlp/data.py` e `scripts/train.py` | `tensorflow/keras` nao estavam instalados no ambiente local | Usar `torchvision.datasets.MNIST` apenas para baixar os dados e converter tudo para NumPy |
 
 ## Como rodar
 
