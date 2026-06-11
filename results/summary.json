@@ -8,6 +8,7 @@
     "activation": "relu",
     "learning_rate": 0.08,
     "learning_rate_decay": 0.96,
+    "momentum": 0.0,
     "epochs": 8,
     "batch_size": 128,
     "l2": 0.0,
@@ -32,6 +33,7 @@
     "activation": "relu",
     "learning_rate": 0.12,
     "learning_rate_decay": 0.96,
+    "momentum": 0.0,
     "epochs": 10,
     "batch_size": 128,
     "l2": 0.0,
@@ -46,5 +48,30 @@
     "test_accuracy": 0.9759,
     "final_val_accuracy": 0.9709,
     "final_train_accuracy": 0.9862
+  },
+  {
+    "name": "improved_relu_256_128_momentum",
+    "hidden_layers": [
+      256,
+      128
+    ],
+    "activation": "relu",
+    "learning_rate": 0.05,
+    "learning_rate_decay": 0.97,
+    "momentum": 0.9,
+    "epochs": 15,
+    "batch_size": 128,
+    "l2": 0.0001,
+    "seed": 84,
+    "layer_sizes": [
+      784,
+      256,
+      128,
+      10
+    ],
+    "test_loss": 0.1012982502579689,
+    "test_accuracy": 0.9816,
+    "final_val_accuracy": 0.9797,
+    "final_train_accuracy": 0.9999
   }
 ]

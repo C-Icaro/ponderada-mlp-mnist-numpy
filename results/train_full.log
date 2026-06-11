@@ -21,4 +21,21 @@ epoch 08/10 loss=0.0720 acc=0.9793 val_acc=0.9698
 epoch 09/10 loss=0.0620 acc=0.9831 val_acc=0.9695
 epoch 10/10 loss=0.0506 acc=0.9862 val_acc=0.9709
 
+== improved_relu_256_128_momentum ==
+epoch 01/15 loss=0.1886 acc=0.9577 val_acc=0.9531
+epoch 02/15 loss=0.1227 acc=0.9761 val_acc=0.9664
+epoch 03/15 loss=0.1022 acc=0.9833 val_acc=0.9714
+epoch 04/15 loss=0.0946 acc=0.9837 val_acc=0.9720
+epoch 05/15 loss=0.0801 acc=0.9889 val_acc=0.9746
+epoch 06/15 loss=0.0706 acc=0.9941 val_acc=0.9767
+epoch 07/15 loss=0.0614 acc=0.9954 val_acc=0.9788
+epoch 08/15 loss=0.0599 acc=0.9962 val_acc=0.9791
+epoch 09/15 loss=0.0539 acc=0.9978 val_acc=0.9788
+epoch 10/15 loss=0.0534 acc=0.9983 val_acc=0.9777
+epoch 11/15 loss=0.0488 acc=0.9993 val_acc=0.9795
+epoch 12/15 loss=0.0470 acc=1.0000 val_acc=0.9797
+epoch 13/15 loss=0.0464 acc=0.9998 val_acc=0.9801
+epoch 14/15 loss=0.0445 acc=1.0000 val_acc=0.9786
+epoch 15/15 loss=0.0438 acc=0.9999 val_acc=0.9797
+
 Resumo salvo em results\summary.json

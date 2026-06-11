@@ -2,7 +2,7 @@
 
 Implementacao didatica de um Multi-Layer Perceptron para classificar digitos manuscritos do MNIST. A rede foi feita manualmente com NumPy: forward pass, softmax, cross-entropy, backpropagation e mini-batch SGD. O `torchvision` foi usado apenas para carregar o dataset, conforme permitido no enunciado.
 
-Resultado final: **97.59% de acuracia no conjunto de teste**, acima da meta de 92%.
+Resultado final melhorado: **98.16% de acuracia no conjunto de teste**, acima da meta de 92% e acima da configuracao anterior de 97.59%.
 
 ## Fontes de estudo
 
@@ -16,6 +16,7 @@ Resultado final: **97.59% de acuracia no conjunto de teste**, acima da meta de 9
 |-- mlp/
 |   |-- activations.py
 |   |-- data.py
+|   |-- gradient_check.py
 |   |-- losses.py
 |   |-- network.py
 |   `-- optimizers.py
@@ -23,13 +24,16 @@ Resultado final: **97.59% de acuracia no conjunto de teste**, acima da meta de 9
 |   `-- experimentos.ipynb
 |-- results/
 |   |-- confusion_matrix_final.png
+|   |-- gradient_check.json
 |   |-- history_compact_relu_64_32.csv
 |   |-- history_final_relu_128_64.csv
+|   |-- history_improved_relu_256_128_momentum.csv
 |   |-- loss_accuracy.png
 |   |-- summary.csv
 |   |-- summary.json
 |   `-- train_full.log
 |-- scripts/
+|   |-- check_gradients.py
 |   `-- train.py
 |-- tests/
 |   |-- test_backprop.py
@@ -45,6 +49,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 python -m pytest tests
+python scripts/check_gradients.py
 python scripts/train.py
 ```
 
@@ -58,10 +63,10 @@ O notebook principal esta em `notebooks/experimentos.ipynb`.
 
 ## Arquitetura escolhida
 
-Modelo final:
+Modelo final melhorado:
 
 ```text
-784 entradas -> 128 ReLU -> 64 ReLU -> 10 logits -> softmax
+784 entradas -> 256 ReLU -> 128 ReLU -> 10 logits -> softmax
 ```
 
 Decisoes:
@@ -70,14 +75,18 @@ Decisoes:
 - Usei **ReLU** nas camadas ocultas porque e simples, barata e evita boa parte da saturacao que sigmoid/tanh podem ter em redes maiores.
 - Usei **inicializacao He** nas camadas ocultas para preservar melhor a escala dos sinais no comeco do treino.
 - Usei **softmax + cross-entropy** na saida porque o problema e multiclasse.
-- Usei **mini-batch SGD** com batch size 128 e decaimento simples do learning rate.
+- Usei **mini-batch SGD com momentum 0.9** no modelo melhorado para acelerar a convergencia sem trocar a implementacao manual por um framework.
+- Usei **L2 leve (`1e-4`)** porque a nova arquitetura chegou perto de 100% no subconjunto de treino usado para metrica, entao havia risco de overfitting.
 
 ## Resultados
 
 | Configuracao | Arquitetura | Epocas | LR inicial | Decaimento | Acuracia teste | Loss teste |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
 | `compact_relu_64_32` | 784 -> 64 -> 32 -> 10 | 8 | 0.08 | 0.96 | 96.34% | 0.1246 |
-| `final_relu_128_64` | 784 -> 128 -> 64 -> 10 | 10 | 0.12 | 0.96 | **97.59%** | **0.0821** |
+| `final_relu_128_64` | 784 -> 128 -> 64 -> 10 | 10 | 0.12 | 0.96 | 97.59% | 0.0821 |
+| `improved_relu_256_128_momentum` | 784 -> 256 -> 128 -> 10 | 15 | 0.05 | 0.97 | **98.16%** | 0.1013 |
+
+O modelo melhorado ganhou **+0.57 ponto percentual** de acuracia de teste em relacao ao modelo anterior (`97.59% -> 98.16%`). A loss de teste ficou maior que a do modelo anterior, mas a acuracia e a validacao subiram; isso sugere predicoes corretas mais frequentes, com algumas probabilidades menos calibradas. Para esta ponderada, a metrica principal do enunciado e acuracia.
 
 ![Curvas de loss e acuracia](results/loss_accuracy.png)
 
@@ -96,10 +105,13 @@ Decisoes:
 | Smoke test | `44dcb0a` | Eu nao queria gastar minutos no treino completo antes de validar o pipeline | Criar `--quick` para rodar em subconjunto pequeno |
 | Treino completo | `5dfc65d` | O stdout ficou bufferizado em processo separado | Salvar CSV, JSON, PNG e log como evidencia principal |
 | Notebook | `7685462` | O notebook precisava explicar processo, nao so mostrar codigo | Montar narrativa executavel com referencias, validacao e resultados |
+| Melhoria do modelo | incremento atual | O modelo anterior ja passava da meta, mas ainda havia margem de capacidade | Aumentar largura, ativar momentum e adicionar L2 leve; reexecutar treino completo |
 
 ## Decisoes e dificuldades
 
 A decisao tecnica mais dificil foi **nao pular direto para o MNIST**. Eu queria ver a acuracia logo, mas isso teria tornado o debug confuso. Fiz primeiro o forward pass, depois o gradient check e so depois treinei no dataset real. Essa ordem foi mais lenta no comeco, mas evitou perder tempo tentando ajustar learning rate quando o problema poderia ser um gradiente errado.
+
+Na melhoria do modelo, a decisao principal foi aumentar a arquitetura de `128 -> 64` para `256 -> 128` e usar momentum. Eu escolhi isso porque o modelo anterior ainda nao saturava a validacao, e momentum costuma ajudar SGD a atravessar regioes rasas ou oscilatorias da superficie de loss. Como o treino chegou perto de 100%, adicionei L2 leve para reduzir o risco de memorizar demais.
 
 O que tentei que nao funcionou: a primeira inspecao do notebook falhou por eu usar sintaxe de Bash dentro do PowerShell. Depois, a impressao do enunciado falhou por causa do encoding do terminal. Tambem descobri que `tensorflow/keras` nao estava disponivel, entao precisei usar Torchvision como fonte dos dados. Essas dificuldades nao mudaram a matematica da rede, mas mudaram o processo: passei a validar ambiente e caminhos antes de implementar cada etapa.
 
@@ -111,6 +123,7 @@ Comandos executados:
 
 ```powershell
 python -m pytest tests
+python scripts/check_gradients.py
 python scripts/train.py --quick
 python scripts/train.py
 ```
@@ -119,6 +132,7 @@ Sinais observaveis:
 
 - `tests/test_forward.py`: valida dimensoes e soma da softmax.
 - `tests/test_backprop.py`: valida gradient check e queda de loss em problema pequeno.
+- `results/gradient_check.json`: registra a validacao numerica dos gradientes.
 - `results/summary.json`: registra acuracia final de teste.
 - `results/train_full.log`: registra a evolucao por epoca no treino completo.
 - `notebooks/experimentos.ipynb`: documenta o processo em formato notebook.

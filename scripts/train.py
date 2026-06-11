@@ -27,6 +27,7 @@ EXPERIMENTS = [
         "activation": "relu",
         "learning_rate": 0.08,
         "learning_rate_decay": 0.96,
+        "momentum": 0.0,
         "epochs": 8,
         "batch_size": 128,
         "l2": 0.0,
@@ -38,10 +39,23 @@ EXPERIMENTS = [
         "activation": "relu",
         "learning_rate": 0.12,
         "learning_rate_decay": 0.96,
+        "momentum": 0.0,
         "epochs": 10,
         "batch_size": 128,
         "l2": 0.0,
         "seed": 42,
+    },
+    {
+        "name": "improved_relu_256_128_momentum",
+        "hidden_layers": [256, 128],
+        "activation": "relu",
+        "learning_rate": 0.05,
+        "learning_rate_decay": 0.97,
+        "momentum": 0.9,
+        "epochs": 15,
+        "batch_size": 128,
+        "l2": 1e-4,
+        "seed": 84,
     },
 ]
 
@@ -72,6 +86,9 @@ def main() -> None:
     experiments = _quick_experiments() if args.quick else EXPERIMENTS
     summary = []
     histories: dict[str, list[dict[str, float]]] = {}
+    best_model: MLPClassifier | None = None
+    best_accuracy = -1.0
+    best_name = ""
 
     for config in experiments:
         layer_sizes = [X_train.shape[1], *config["hidden_layers"], 10]
@@ -86,6 +103,7 @@ def main() -> None:
             batch_size=config["batch_size"],
             learning_rate=config["learning_rate"],
             learning_rate_decay=config["learning_rate_decay"],
+            momentum=config["momentum"],
             l2=config["l2"],
             train_metric_sample_size=min(10_000, X_train.shape[0]),
             verbose=True,
@@ -103,15 +121,20 @@ def main() -> None:
         histories[config["name"]] = history
         _write_history(results_dir / f"history_{config['name']}.csv", history)
 
-        if config["name"].startswith("final"):
-            _plot_confusion_matrix(
-                y_test,
-                model.predict(X_test),
-                results_dir / "confusion_matrix_final.png",
-            )
+        if test_metrics["accuracy"] > best_accuracy:
+            best_accuracy = test_metrics["accuracy"]
+            best_model = model
+            best_name = config["name"]
 
     _write_summary(results_dir, summary)
     _plot_histories(histories, results_dir / "loss_accuracy.png")
+    if best_model is not None:
+        _plot_confusion_matrix(
+            y_test,
+            best_model.predict(X_test),
+            results_dir / "confusion_matrix_final.png",
+            title=f"Matriz de confusao - {best_name}",
+        )
     print("\nResumo salvo em", results_dir / "summary.json")
 
 
@@ -166,14 +189,14 @@ def _plot_histories(histories: dict[str, list[dict[str, float]]], path: Path) ->
     plt.close(fig)
 
 
-def _plot_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray, path: Path) -> None:
+def _plot_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray, path: Path, title: str) -> None:
     matrix = np.zeros((10, 10), dtype=np.int64)
     for actual, predicted in zip(y_true, y_pred):
         matrix[int(actual), int(predicted)] += 1
 
     fig, axis = plt.subplots(figsize=(7, 6))
     image = axis.imshow(matrix, cmap="Blues")
-    axis.set_title("Matriz de confusao - modelo final")
+    axis.set_title(title)
     axis.set_xlabel("Predito")
     axis.set_ylabel("Real")
     axis.set_xticks(range(10))
