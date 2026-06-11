@@ -113,8 +113,13 @@ def main() -> None:
             **config,
             "layer_sizes": layer_sizes,
             "test_loss": test_metrics["loss"],
+            "test_data_loss": test_metrics["data_loss"],
+            "test_regularization_loss": test_metrics["regularization_loss"],
             "test_accuracy": test_metrics["accuracy"],
             "final_val_accuracy": history[-1].get("val_accuracy"),
+            "final_val_loss": history[-1].get("val_loss"),
+            "final_val_data_loss": history[-1].get("val_data_loss"),
+            "final_train_data_loss": history[-1].get("train_data_loss"),
             "final_train_accuracy": history[-1]["train_accuracy"],
         }
         summary.append(row)
@@ -170,12 +175,12 @@ def _plot_histories(histories: dict[str, list[dict[str, float]]], path: Path) ->
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
     for name, history in histories.items():
         epochs = [row["epoch"] for row in history]
-        axes[0].plot(epochs, [row["train_loss"] for row in history], marker="o", label=f"{name} treino")
-        axes[0].plot(epochs, [row.get("val_loss", np.nan) for row in history], marker="x", label=f"{name} val")
+        axes[0].plot(epochs, [row.get("train_data_loss", row["train_loss"]) for row in history], marker="o", label=f"{name} treino")
+        axes[0].plot(epochs, [row.get("val_data_loss", row.get("val_loss", np.nan)) for row in history], marker="x", label=f"{name} val")
         axes[1].plot(epochs, [row["train_accuracy"] for row in history], marker="o", label=f"{name} treino")
         axes[1].plot(epochs, [row.get("val_accuracy", np.nan) for row in history], marker="x", label=f"{name} val")
 
-    axes[0].set_title("Loss por epoca")
+    axes[0].set_title("Cross-entropy por epoca")
     axes[0].set_xlabel("Epoca")
     axes[0].set_ylabel("Cross-entropy")
     axes[1].set_title("Acuracia por epoca")

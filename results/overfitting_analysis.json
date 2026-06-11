@@ -1,0 +1,66 @@
+{
+  "diagnosis": {
+    "best_model": "improved_relu_256_128_momentum",
+    "accuracy_gain_vs_previous_pp": 0.5700000000000038,
+    "improved_gap_pp": 2.0199999999999996,
+    "improved_val_drop_pp": 0.039999999999995595,
+    "improved_val_data_loss_rise": 0.003618977963924408,
+    "conclusion": "Ha overfitting leve no modelo melhorado: treino chega quase a 100% e o gap treino-validacao fica perto de 2.02 p.p. Ainda assim, nao ha overfitting danoso na janela treinada, porque a validacao cai apenas 0.04 p.p. do pico e a acuracia de teste sobe em relacao ao modelo anterior."
+  },
+  "models": [
+    {
+      "name": "compact_relu_64_32",
+      "test_accuracy": 0.9634,
+      "test_data_loss": 0.1245667114853859,
+      "test_objective_loss": 0.1245667114853859,
+      "final_train_accuracy": 0.9676,
+      "final_val_accuracy": 0.9625,
+      "final_train_data_loss": 0.11202467232942581,
+      "final_val_data_loss": 0.13801303505897522,
+      "final_generalization_gap_pp": 0.5099999999999993,
+      "best_val_accuracy": 0.9625,
+      "best_val_accuracy_epoch": 8,
+      "final_val_accuracy_drop_from_best_pp": 0.0,
+      "best_val_data_loss": 0.13801303505897522,
+      "best_val_data_loss_epoch": 8,
+      "final_val_data_loss_rise_from_best": 0.0,
+      "diagnosis": "sem sinal material"
+    },
+    {
+      "name": "final_relu_128_64",
+      "test_accuracy": 0.9759,
+      "test_data_loss": 0.08210042119026184,
+      "test_objective_loss": 0.08210042119026184,
+      "final_train_accuracy": 0.9862,
+      "final_val_accuracy": 0.9709,
+      "final_train_data_loss": 0.05062011256814003,
+      "final_val_data_loss": 0.0984858050942421,
+      "final_generalization_gap_pp": 1.529999999999998,
+      "best_val_accuracy": 0.9709,
+      "best_val_accuracy_epoch": 10,
+      "final_val_accuracy_drop_from_best_pp": 0.0,
+      "best_val_data_loss": 0.0984858050942421,
+      "best_val_data_loss_epoch": 10,
+      "final_val_data_loss_rise_from_best": 0.0,
+      "diagnosis": "overfitting leve"
+    },
+    {
+      "name": "improved_relu_256_128_momentum",
+      "test_accuracy": 0.9816,
+      "test_data_loss": 0.06072347238659859,
+      "test_objective_loss": 0.1012982502579689,
+      "final_train_accuracy": 0.9999,
+      "final_val_accuracy": 0.9797,
+      "final_train_data_loss": 0.0032309931702911854,
+      "final_val_data_loss": 0.07709967344999313,
+      "final_generalization_gap_pp": 2.0199999999999996,
+      "best_val_accuracy": 0.9801,
+      "best_val_accuracy_epoch": 13,
+      "final_val_accuracy_drop_from_best_pp": 0.039999999999995595,
+      "best_val_data_loss": 0.07348069548606873,
+      "best_val_data_loss_epoch": 8,
+      "final_val_data_loss_rise_from_best": 0.003618977963924408,
+      "diagnosis": "overfitting leve"
+    }
+  ]
+}

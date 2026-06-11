@@ -160,12 +160,16 @@ class MLPClassifier:
                 "learning_rate": float(optimizer.learning_rate),
                 "batch_loss": float(np.mean(epoch_losses)),
                 "train_loss": train_metrics["loss"],
+                "train_data_loss": train_metrics["data_loss"],
+                "train_regularization_loss": train_metrics["regularization_loss"],
                 "train_accuracy": train_metrics["accuracy"],
             }
 
             if X_val is not None and y_val is not None:
                 val_metrics = self.evaluate(X_val, y_val, l2=l2)
                 row["val_loss"] = val_metrics["loss"]
+                row["val_data_loss"] = val_metrics["data_loss"]
+                row["val_regularization_loss"] = val_metrics["regularization_loss"]
                 row["val_accuracy"] = val_metrics["accuracy"]
 
             history.append(row)
@@ -181,9 +185,13 @@ class MLPClassifier:
         return history
 
     def evaluate(self, X: Array, y: Array, l2: float = 0.0) -> dict[str, float]:
-        probs = self.predict_proba(X)
+        logits = self.forward(X)
+        data_loss, probs = softmax_cross_entropy(logits, y)
+        regularization_loss = self._l2_penalty(l2)
         return {
-            "loss": self.loss(X, y, l2=l2),
+            "loss": data_loss + regularization_loss,
+            "data_loss": data_loss,
+            "regularization_loss": regularization_loss,
             "accuracy": accuracy(probs, y),
         }
 

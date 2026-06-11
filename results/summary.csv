@@ -1,4 +1,4 @@
-activation,batch_size,epochs,final_train_accuracy,final_val_accuracy,hidden_layers,l2,layer_sizes,learning_rate,learning_rate_decay,momentum,name,seed,test_accuracy,test_loss
-relu,128,8,0.9676,0.9625,"[64, 32]",0.0,"[784, 64, 32, 10]",0.08,0.96,0.0,compact_relu_64_32,21,0.9634,0.1245667114853859
-relu,128,10,0.9862,0.9709,"[128, 64]",0.0,"[784, 128, 64, 10]",0.12,0.96,0.0,final_relu_128_64,42,0.9759,0.08210042119026184
-relu,128,15,0.9999,0.9797,"[256, 128]",0.0001,"[784, 256, 128, 10]",0.05,0.97,0.9,improved_relu_256_128_momentum,84,0.9816,0.1012982502579689
+activation,batch_size,epochs,final_train_accuracy,final_train_data_loss,final_val_accuracy,final_val_data_loss,final_val_loss,hidden_layers,l2,layer_sizes,learning_rate,learning_rate_decay,momentum,name,seed,test_accuracy,test_data_loss,test_loss,test_regularization_loss
+relu,128,8,0.9676,0.11202467232942581,0.9625,0.13801303505897522,0.13801303505897522,"[64, 32]",0.0,"[784, 64, 32, 10]",0.08,0.96,0.0,compact_relu_64_32,21,0.9634,0.1245667114853859,0.1245667114853859,0.0
+relu,128,10,0.9862,0.05062011256814003,0.9709,0.0984858050942421,0.0984858050942421,"[128, 64]",0.0,"[784, 128, 64, 10]",0.12,0.96,0.0,final_relu_128_64,42,0.9759,0.08210042119026184,0.08210042119026184,0.0
+relu,128,15,0.9999,0.0032309931702911854,0.9797,0.07709967344999313,0.11767445132136345,"[256, 128]",0.0001,"[784, 256, 128, 10]",0.05,0.97,0.9,improved_relu_256_128_momentum,84,0.9816,0.06072347238659859,0.1012982502579689,0.040574777871370316

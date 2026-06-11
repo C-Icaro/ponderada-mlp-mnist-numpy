@@ -29,6 +29,8 @@ Resultado final melhorado: **98.16% de acuracia no conjunto de teste**, acima da
 |   |-- history_final_relu_128_64.csv
 |   |-- history_improved_relu_256_128_momentum.csv
 |   |-- loss_accuracy.png
+|   |-- overfitting_analysis.md
+|   |-- overfitting_gaps.png
 |   |-- summary.csv
 |   |-- summary.json
 |   `-- train_full.log
@@ -51,6 +53,7 @@ pip install -r requirements.txt
 python -m pytest tests
 python scripts/check_gradients.py
 python scripts/train.py
+python scripts/analyze_overfitting.py
 ```
 
 Para validar rapidamente o pipeline sem retreinar tudo:
@@ -80,17 +83,31 @@ Decisoes:
 
 ## Resultados
 
-| Configuracao | Arquitetura | Epocas | LR inicial | Decaimento | Acuracia teste | Loss teste |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| `compact_relu_64_32` | 784 -> 64 -> 32 -> 10 | 8 | 0.08 | 0.96 | 96.34% | 0.1246 |
-| `final_relu_128_64` | 784 -> 128 -> 64 -> 10 | 10 | 0.12 | 0.96 | 97.59% | 0.0821 |
-| `improved_relu_256_128_momentum` | 784 -> 256 -> 128 -> 10 | 15 | 0.05 | 0.97 | **98.16%** | 0.1013 |
+| Configuracao | Arquitetura | Epocas | LR inicial | Decaimento | Acuracia teste | CE teste | Obj. teste |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `compact_relu_64_32` | 784 -> 64 -> 32 -> 10 | 8 | 0.08 | 0.96 | 96.34% | 0.1246 | 0.1246 |
+| `final_relu_128_64` | 784 -> 128 -> 64 -> 10 | 10 | 0.12 | 0.96 | 97.59% | 0.0821 | 0.0821 |
+| `improved_relu_256_128_momentum` | 784 -> 256 -> 128 -> 10 | 15 | 0.05 | 0.97 | **98.16%** | **0.0607** | 0.1013 |
 
-O modelo melhorado ganhou **+0.57 ponto percentual** de acuracia de teste em relacao ao modelo anterior (`97.59% -> 98.16%`). A loss de teste ficou maior que a do modelo anterior, mas a acuracia e a validacao subiram; isso sugere predicoes corretas mais frequentes, com algumas probabilidades menos calibradas. Para esta ponderada, a metrica principal do enunciado e acuracia.
+O modelo melhorado ganhou **+0.57 ponto percentual** de acuracia de teste em relacao ao modelo anterior (`97.59% -> 98.16%`). A coluna **CE teste** e a cross-entropy pura, comparavel entre modelos. A coluna **Obj. teste** inclui penalidade L2 quando `l2 > 0`, por isso nao deve ser usada sozinha para comparar modelos regularizados e nao regularizados.
 
 ![Curvas de loss e acuracia](results/loss_accuracy.png)
 
 ![Matriz de confusao](results/confusion_matrix_final.png)
+
+## Investigacao de overfitting
+
+Depois da melhoria, investiguei se a arquitetura maior estava apenas memorizando o treino. O diagnostico esta versionado em `results/overfitting_analysis.md`.
+
+![Sinais de overfitting](results/overfitting_gaps.png)
+
+| Modelo | Test acc | Gap treino-val | Melhor val acc | Queda val final | Diagnostico |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `compact_relu_64_32` | 96.34% | 0.51 p.p. | 96.25% ep.8 | 0.00 p.p. | sem sinal material |
+| `final_relu_128_64` | 97.59% | 1.53 p.p. | 97.09% ep.10 | 0.00 p.p. | overfitting leve |
+| `improved_relu_256_128_momentum` | 98.16% | 2.02 p.p. | 98.01% ep.13 | 0.04 p.p. | overfitting leve |
+
+Conclusao: ha **overfitting leve** no modelo melhorado, porque o treino chega a `99.99%` e o gap treino-validacao fica em `2.02 p.p.`. Mas nao ha sinal de overfitting danoso na janela treinada: a validacao final cai apenas `0.04 p.p.` em relacao ao melhor ponto, a cross-entropy de validacao sobe so `0.0036` desde o minimo, e a acuracia de teste continua maior que a do modelo anterior. A decisao atual e manter o modelo melhorado e registrar early stopping na epoca 13 como proxima melhoria natural.
 
 ## Evolucao e pedras no caminho
 
@@ -106,6 +123,7 @@ O modelo melhorado ganhou **+0.57 ponto percentual** de acuracia de teste em rel
 | Treino completo | `5dfc65d` | O stdout ficou bufferizado em processo separado | Salvar CSV, JSON, PNG e log como evidencia principal |
 | Notebook | `7685462` | O notebook precisava explicar processo, nao so mostrar codigo | Montar narrativa executavel com referencias, validacao e resultados |
 | Melhoria do modelo | incremento atual | O modelo anterior ja passava da meta, mas ainda havia margem de capacidade | Aumentar largura, ativar momentum e adicionar L2 leve; reexecutar treino completo |
+| Overfitting | incremento atual | O `test_loss` misturava cross-entropy e L2, o que podia distorcer a leitura | Separar `data_loss` de `regularization_loss` e gerar diagnostico de gap treino-validacao |
 
 ## Decisoes e dificuldades
 
@@ -126,6 +144,7 @@ python -m pytest tests
 python scripts/check_gradients.py
 python scripts/train.py --quick
 python scripts/train.py
+python scripts/analyze_overfitting.py
 ```
 
 Sinais observaveis:
@@ -134,6 +153,7 @@ Sinais observaveis:
 - `tests/test_backprop.py`: valida gradient check e queda de loss em problema pequeno.
 - `results/gradient_check.json`: registra a validacao numerica dos gradientes.
 - `results/summary.json`: registra acuracia final de teste.
+- `results/overfitting_analysis.md`: registra diagnostico de overfitting.
 - `results/train_full.log`: registra a evolucao por epoca no treino completo.
 - `notebooks/experimentos.ipynb`: documenta o processo em formato notebook.
 
