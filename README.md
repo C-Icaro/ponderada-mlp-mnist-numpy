@@ -2,7 +2,9 @@
 
 Implementacao didatica de um Multi-Layer Perceptron para classificar digitos manuscritos do MNIST. A rede foi feita manualmente com NumPy: forward pass, softmax, cross-entropy, backpropagation e mini-batch SGD. O `torchvision` foi usado apenas para carregar o dataset, conforme permitido no enunciado.
 
-Resultado final melhorado: **98.16% de acuracia no conjunto de teste**, acima da meta de 92% e acima da configuracao anterior de 97.59%.
+Resultado de maior acuracia: **98.16%** no teste, mas com overfitting leve.
+
+Modelo recomendado apos a resolucao do problema: **97.86%** no teste, com gap treino-validacao reduzido de `2.03 p.p.` para `1.20 p.p.` por early stopping e L2 mais forte.
 
 ## Fontes de estudo
 
@@ -28,6 +30,7 @@ Resultado final melhorado: **98.16% de acuracia no conjunto de teste**, acima da
 |   |-- history_compact_relu_64_32.csv
 |   |-- history_final_relu_128_64.csv
 |   |-- history_improved_relu_256_128_momentum.csv
+|   |-- history_resolved_relu_256_128_l2_earlystop.csv
 |   |-- loss_accuracy.png
 |   |-- overfitting_analysis.md
 |   |-- overfitting_gaps.png
@@ -35,6 +38,7 @@ Resultado final melhorado: **98.16% de acuracia no conjunto de teste**, acima da
 |   |-- summary.json
 |   `-- train_full.log
 |-- scripts/
+|   |-- analyze_overfitting.py
 |   |-- check_gradients.py
 |   `-- train.py
 |-- tests/
@@ -66,10 +70,17 @@ O notebook principal esta em `notebooks/experimentos.ipynb`.
 
 ## Arquitetura escolhida
 
-Modelo final melhorado:
+Modelo de maior acuracia:
 
 ```text
 784 entradas -> 256 ReLU -> 128 ReLU -> 10 logits -> softmax
+```
+
+Modelo recomendado apos investigar overfitting:
+
+```text
+784 entradas -> 256 ReLU -> 128 ReLU -> 10 logits -> softmax
+SGD momentum 0.9 + L2 1e-3 + early stopping por val_data_loss
 ```
 
 Decisoes:
@@ -79,7 +90,7 @@ Decisoes:
 - Usei **inicializacao He** nas camadas ocultas para preservar melhor a escala dos sinais no comeco do treino.
 - Usei **softmax + cross-entropy** na saida porque o problema e multiclasse.
 - Usei **mini-batch SGD com momentum 0.9** no modelo melhorado para acelerar a convergencia sem trocar a implementacao manual por um framework.
-- Usei **L2 leve (`1e-4`)** porque a nova arquitetura chegou perto de 100% no subconjunto de treino usado para metrica, entao havia risco de overfitting.
+- O problema encontrado foi que o modelo `improved` chegou a treino quase perfeito e abriu gap de generalizacao. A resolucao foi manter a arquitetura, mas aumentar L2 para `1e-3` e restaurar o checkpoint de menor `val_data_loss`.
 
 ## Resultados
 
@@ -88,8 +99,9 @@ Decisoes:
 | `compact_relu_64_32` | 784 -> 64 -> 32 -> 10 | 8 | 0.08 | 0.96 | 96.34% | 0.1246 | 0.1246 |
 | `final_relu_128_64` | 784 -> 128 -> 64 -> 10 | 10 | 0.12 | 0.96 | 97.59% | 0.0821 | 0.0821 |
 | `improved_relu_256_128_momentum` | 784 -> 256 -> 128 -> 10 | 15 | 0.05 | 0.97 | **98.16%** | **0.0607** | 0.1013 |
+| `resolved_relu_256_128_l2_earlystop` | 784 -> 256 -> 128 -> 10 | 11/25 | 0.05 | 0.97 | **97.86%** | 0.0694 | 0.1807 |
 
-O modelo melhorado ganhou **+0.57 ponto percentual** de acuracia de teste em relacao ao modelo anterior (`97.59% -> 98.16%`). A coluna **CE teste** e a cross-entropy pura, comparavel entre modelos. A coluna **Obj. teste** inclui penalidade L2 quando `l2 > 0`, por isso nao deve ser usada sozinha para comparar modelos regularizados e nao regularizados.
+O modelo `improved` ganhou **+0.57 ponto percentual** de acuracia de teste em relacao ao modelo anterior (`97.59% -> 98.16%`), mas trouxe overfitting leve. O modelo `resolved` sacrifica `0.30 p.p.` em relacao ao `improved`, ainda fica `+0.27 p.p.` acima do modelo anterior, e reduz o gap treino-validacao. A coluna **CE teste** e a cross-entropy pura, comparavel entre modelos. A coluna **Obj. teste** inclui penalidade L2 quando `l2 > 0`, por isso nao deve ser usada sozinha para comparar modelos regularizados e nao regularizados.
 
 ![Curvas de loss e acuracia](results/loss_accuracy.png)
 
@@ -101,13 +113,14 @@ Depois da melhoria, investiguei se a arquitetura maior estava apenas memorizando
 
 ![Sinais de overfitting](results/overfitting_gaps.png)
 
-| Modelo | Test acc | Gap treino-val | Melhor val acc | Queda val final | Diagnostico |
-| --- | ---: | ---: | ---: | ---: | --- |
-| `compact_relu_64_32` | 96.34% | 0.51 p.p. | 96.25% ep.8 | 0.00 p.p. | sem sinal material |
-| `final_relu_128_64` | 97.59% | 1.53 p.p. | 97.09% ep.10 | 0.00 p.p. | overfitting leve |
-| `improved_relu_256_128_momentum` | 98.16% | 2.02 p.p. | 98.01% ep.13 | 0.04 p.p. | overfitting leve |
+| Modelo | Test acc | Gap treino-val | Melhor val acc | Queda val final | Epoca selecionada | Diagnostico |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `compact_relu_64_32` | 96.34% | 0.66 p.p. | 96.25% ep.8 | 0.00 p.p. | 8 | sem sinal material |
+| `final_relu_128_64` | 97.59% | 1.49 p.p. | 97.09% ep.10 | 0.00 p.p. | 10 | sem sinal material |
+| `improved_relu_256_128_momentum` | 98.16% | 2.03 p.p. | 98.01% ep.13 | 0.04 p.p. | 15 | overfitting leve |
+| `resolved_relu_256_128_l2_earlystop` | 97.86% | 1.20 p.p. | 97.86% ep.8 | 0.00 p.p. | 8 | mitigado por early stopping |
 
-Conclusao: ha **overfitting leve** no modelo melhorado, porque o treino chega a `99.99%` e o gap treino-validacao fica em `2.02 p.p.`. Mas nao ha sinal de overfitting danoso na janela treinada: a validacao final cai apenas `0.04 p.p.` em relacao ao melhor ponto, a cross-entropy de validacao sobe so `0.0036` desde o minimo, e a acuracia de teste continua maior que a do modelo anterior. A decisao atual e manter o modelo melhorado e registrar early stopping na epoca 13 como proxima melhoria natural.
+Conclusao: o problema encontrado foi **overfitting leve** no modelo `improved`, porque o treino chegou a `100.00%` e o gap treino-validacao ficou em `2.03 p.p.`. A resolucao aplicada foi criar o modelo `resolved` com `L2=1e-3` e early stopping por `val_data_loss`, restaurando a epoca 8. O gap caiu para `1.20 p.p.`, a queda de validacao final ficou em `0.00 p.p.`, e a acuracia de teste permaneceu acima do modelo anterior.
 
 ## Evolucao e pedras no caminho
 
@@ -124,12 +137,13 @@ Conclusao: ha **overfitting leve** no modelo melhorado, porque o treino chega a 
 | Notebook | `7685462` | O notebook precisava explicar processo, nao so mostrar codigo | Montar narrativa executavel com referencias, validacao e resultados |
 | Melhoria do modelo | incremento atual | O modelo anterior ja passava da meta, mas ainda havia margem de capacidade | Aumentar largura, ativar momentum e adicionar L2 leve; reexecutar treino completo |
 | Overfitting | incremento atual | O `test_loss` misturava cross-entropy e L2, o que podia distorcer a leitura | Separar `data_loss` de `regularization_loss` e gerar diagnostico de gap treino-validacao |
+| Resolucao do overfitting | incremento atual | O modelo de maior acuracia memorizava demais o treino | Usar `L2=1e-3` + early stopping por `val_data_loss` com restauracao do melhor checkpoint |
 
 ## Decisoes e dificuldades
 
 A decisao tecnica mais dificil foi **nao pular direto para o MNIST**. Eu queria ver a acuracia logo, mas isso teria tornado o debug confuso. Fiz primeiro o forward pass, depois o gradient check e so depois treinei no dataset real. Essa ordem foi mais lenta no comeco, mas evitou perder tempo tentando ajustar learning rate quando o problema poderia ser um gradiente errado.
 
-Na melhoria do modelo, a decisao principal foi aumentar a arquitetura de `128 -> 64` para `256 -> 128` e usar momentum. Eu escolhi isso porque o modelo anterior ainda nao saturava a validacao, e momentum costuma ajudar SGD a atravessar regioes rasas ou oscilatorias da superficie de loss. Como o treino chegou perto de 100%, adicionei L2 leve para reduzir o risco de memorizar demais.
+Na melhoria do modelo, a decisao principal foi aumentar a arquitetura de `128 -> 64` para `256 -> 128` e usar momentum. Eu escolhi isso porque o modelo anterior ainda nao saturava a validacao, e momentum costuma ajudar SGD a atravessar regioes rasas ou oscilatorias da superficie de loss. O problema encontrado depois foi que o modelo `improved` passou a memorizar demais o treino. A resolucao foi aplicar uma troca consciente: reduzir um pouco a acuracia maxima de teste, de `98.16%` para `97.86%`, para reduzir o gap treino-validacao e entregar um modelo mais estavel.
 
 O que tentei que nao funcionou: a primeira inspecao do notebook falhou por eu usar sintaxe de Bash dentro do PowerShell. Depois, a impressao do enunciado falhou por causa do encoding do terminal. Tambem descobri que `tensorflow/keras` nao estava disponivel, entao precisei usar Torchvision como fonte dos dados. Essas dificuldades nao mudaram a matematica da rede, mas mudaram o processo: passei a validar ambiente e caminhos antes de implementar cada etapa.
 

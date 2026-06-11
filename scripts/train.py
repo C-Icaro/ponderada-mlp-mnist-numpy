@@ -57,6 +57,24 @@ EXPERIMENTS = [
         "l2": 1e-4,
         "seed": 84,
     },
+    {
+        "name": "resolved_relu_256_128_l2_earlystop",
+        "hidden_layers": [256, 128],
+        "activation": "relu",
+        "learning_rate": 0.05,
+        "learning_rate_decay": 0.97,
+        "momentum": 0.9,
+        "epochs": 25,
+        "batch_size": 128,
+        "l2": 1e-3,
+        "seed": 84,
+        "early_stopping": True,
+        "patience": 3,
+        "monitor": "val_data_loss",
+        "mode": "min",
+        "min_delta": 0.0,
+        "restore_best_weights": True,
+    },
 ]
 
 
@@ -89,6 +107,8 @@ def main() -> None:
     best_model: MLPClassifier | None = None
     best_accuracy = -1.0
     best_name = ""
+    report_model: MLPClassifier | None = None
+    report_name = ""
 
     for config in experiments:
         layer_sizes = [X_train.shape[1], *config["hidden_layers"], 10]
@@ -106,8 +126,17 @@ def main() -> None:
             momentum=config["momentum"],
             l2=config["l2"],
             train_metric_sample_size=min(10_000, X_train.shape[0]),
+            early_stopping=config.get("early_stopping", False),
+            patience=config.get("patience", 3),
+            monitor=config.get("monitor", "val_data_loss"),
+            mode=config.get("mode", "min"),
+            min_delta=config.get("min_delta", 0.0),
+            restore_best_weights=config.get("restore_best_weights", True),
             verbose=True,
         )
+        metric_sample_size = min(10_000, X_train.shape[0])
+        train_metrics = model.evaluate(X_train[:metric_sample_size], y_train[:metric_sample_size], l2=config["l2"])
+        val_metrics = model.evaluate(X_val, y_val, l2=config["l2"])
         test_metrics = model.evaluate(X_test, y_test, l2=config["l2"])
         row = {
             **config,
@@ -116,11 +145,16 @@ def main() -> None:
             "test_data_loss": test_metrics["data_loss"],
             "test_regularization_loss": test_metrics["regularization_loss"],
             "test_accuracy": test_metrics["accuracy"],
-            "final_val_accuracy": history[-1].get("val_accuracy"),
-            "final_val_loss": history[-1].get("val_loss"),
-            "final_val_data_loss": history[-1].get("val_data_loss"),
-            "final_train_data_loss": history[-1].get("train_data_loss"),
-            "final_train_accuracy": history[-1]["train_accuracy"],
+            "final_val_accuracy": val_metrics["accuracy"],
+            "final_val_loss": val_metrics["loss"],
+            "final_val_data_loss": val_metrics["data_loss"],
+            "final_train_data_loss": train_metrics["data_loss"],
+            "final_train_accuracy": train_metrics["accuracy"],
+            "epochs_run": len(history),
+            "selected_epoch": model.best_epoch_ if model.best_epoch_ is not None else len(history),
+            "stopped_epoch": model.stopped_epoch_,
+            "restored_best_weights": model.restored_best_weights_,
+            "best_monitor_value": model.best_monitor_value_,
         }
         summary.append(row)
         histories[config["name"]] = history
@@ -130,15 +164,20 @@ def main() -> None:
             best_accuracy = test_metrics["accuracy"]
             best_model = model
             best_name = config["name"]
+        if config["name"].startswith("resolved_"):
+            report_model = model
+            report_name = config["name"]
 
     _write_summary(results_dir, summary)
     _plot_histories(histories, results_dir / "loss_accuracy.png")
-    if best_model is not None:
+    final_model = report_model if report_model is not None else best_model
+    final_name = report_name if report_model is not None else best_name
+    if final_model is not None:
         _plot_confusion_matrix(
             y_test,
-            best_model.predict(X_test),
+            final_model.predict(X_test),
             results_dir / "confusion_matrix_final.png",
-            title=f"Matriz de confusao - {best_name}",
+            title=f"Matriz de confusao - {final_name}",
         )
     print("\nResumo salvo em", results_dir / "summary.json")
 

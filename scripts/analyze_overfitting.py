@@ -45,16 +45,23 @@ def _read_history(path: Path) -> list[dict[str, float]]:
 
 
 def _analyze_one(config: dict[str, object], history: list[dict[str, float]]) -> dict[str, object]:
-    final = history[-1]
+    final = {
+        "train_accuracy": float(config.get("final_train_accuracy", history[-1]["train_accuracy"])),
+        "val_accuracy": float(config.get("final_val_accuracy", history[-1]["val_accuracy"])),
+        "train_data_loss": float(config.get("final_train_data_loss", history[-1].get("train_data_loss", history[-1]["train_loss"]))),
+        "val_data_loss": float(config.get("final_val_data_loss", history[-1].get("val_data_loss", history[-1]["val_loss"]))),
+    }
     best_val_acc = max(history, key=lambda row: row["val_accuracy"])
-    best_val_loss_key = "val_data_loss" if "val_data_loss" in final else "val_loss"
+    best_val_loss_key = "val_data_loss" if "val_data_loss" in history[-1] else "val_loss"
     best_val_loss = min(history, key=lambda row: row[best_val_loss_key])
 
     final_gap_pp = 100 * (final["train_accuracy"] - final["val_accuracy"])
     val_acc_drop_pp = 100 * (best_val_acc["val_accuracy"] - final["val_accuracy"])
-    val_loss_rise = final[best_val_loss_key] - best_val_loss[best_val_loss_key]
+    val_loss_rise = final["val_data_loss"] - best_val_loss[best_val_loss_key]
 
-    if final_gap_pp >= 3.0 or val_acc_drop_pp >= 1.0 or val_loss_rise >= 0.03:
+    if config.get("early_stopping") and val_acc_drop_pp < 1.0 and val_loss_rise < 0.01:
+        label = "mitigado por early stopping"
+    elif final_gap_pp >= 3.0 or val_acc_drop_pp >= 1.0 or val_loss_rise >= 0.03:
         label = "overfitting relevante"
     elif final_gap_pp >= 1.5 or val_loss_rise >= 0.01:
         label = "overfitting leve"
@@ -68,8 +75,8 @@ def _analyze_one(config: dict[str, object], history: list[dict[str, float]]) -> 
         "test_objective_loss": config["test_loss"],
         "final_train_accuracy": final["train_accuracy"],
         "final_val_accuracy": final["val_accuracy"],
-        "final_train_data_loss": final.get("train_data_loss", final["train_loss"]),
-        "final_val_data_loss": final.get("val_data_loss", final["val_loss"]),
+        "final_train_data_loss": final["train_data_loss"],
+        "final_val_data_loss": final["val_data_loss"],
         "final_generalization_gap_pp": final_gap_pp,
         "best_val_accuracy": best_val_acc["val_accuracy"],
         "best_val_accuracy_epoch": int(best_val_acc["epoch"]),
@@ -77,24 +84,35 @@ def _analyze_one(config: dict[str, object], history: list[dict[str, float]]) -> 
         "best_val_data_loss": best_val_loss[best_val_loss_key],
         "best_val_data_loss_epoch": int(best_val_loss["epoch"]),
         "final_val_data_loss_rise_from_best": val_loss_rise,
+        "selected_epoch": config.get("selected_epoch"),
+        "epochs_run": config.get("epochs_run", len(history)),
+        "early_stopping": bool(config.get("early_stopping", False)),
+        "stopped_epoch": config.get("stopped_epoch"),
         "diagnosis": label,
     }
 
 
 def _overall_diagnosis(analyses: list[dict[str, object]]) -> dict[str, object]:
     improved = next(item for item in analyses if item["name"] == "improved_relu_256_128_momentum")
+    resolved = next((item for item in analyses if str(item["name"]).startswith("resolved_")), improved)
     previous = next(item for item in analyses if item["name"] == "final_relu_128_64")
     return {
-        "best_model": improved["name"],
-        "accuracy_gain_vs_previous_pp": 100 * (improved["test_accuracy"] - previous["test_accuracy"]),
+        "best_model": max(analyses, key=lambda item: item["test_accuracy"])["name"],
+        "resolved_model": resolved["name"],
+        "accuracy_gain_vs_previous_pp": 100 * (resolved["test_accuracy"] - previous["test_accuracy"]),
+        "accuracy_delta_resolved_vs_problem_pp": 100 * (resolved["test_accuracy"] - improved["test_accuracy"]),
         "improved_gap_pp": improved["final_generalization_gap_pp"],
+        "resolved_gap_pp": resolved["final_generalization_gap_pp"],
+        "gap_reduction_pp": improved["final_generalization_gap_pp"] - resolved["final_generalization_gap_pp"],
         "improved_val_drop_pp": improved["final_val_accuracy_drop_from_best_pp"],
+        "resolved_val_drop_pp": resolved["final_val_accuracy_drop_from_best_pp"],
         "improved_val_data_loss_rise": improved["final_val_data_loss_rise_from_best"],
+        "resolved_val_data_loss_rise": resolved["final_val_data_loss_rise_from_best"],
         "conclusion": (
-            "Ha overfitting leve no modelo melhorado: treino chega quase a 100% e o gap treino-validacao fica perto de "
-            f"{improved['final_generalization_gap_pp']:.2f} p.p. Ainda assim, nao ha overfitting danoso na janela treinada, "
-            f"porque a validacao cai apenas {improved['final_val_accuracy_drop_from_best_pp']:.2f} p.p. do pico e a acuracia "
-            "de teste sobe em relacao ao modelo anterior."
+            "O problema encontrado foi overfitting leve no modelo improved: treino quase perfeito e gap treino-validacao de "
+            f"{improved['final_generalization_gap_pp']:.2f} p.p. A resolucao aplicada foi early stopping por val_data_loss "
+            f"com restauracao do melhor checkpoint. O gap caiu para {resolved['final_generalization_gap_pp']:.2f} p.p. "
+            f"e a acuracia de teste ficou em {resolved['test_accuracy']:.2%}."
         ),
     }
 
@@ -105,18 +123,19 @@ def _to_markdown(report: dict[str, object]) -> str:
         "",
         report["diagnosis"]["conclusion"],
         "",
-        "| Modelo | Test acc | Gap treino-val | Melhor val acc | Queda val final | Diagnostico |",
-        "| --- | ---: | ---: | ---: | ---: | --- |",
+        "| Modelo | Test acc | Gap treino-val | Melhor val acc | Queda val final | Epoca selecionada | Diagnostico |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for item in report["models"]:
         lines.append(
-            "| {name} | {test:.2%} | {gap:.2f} p.p. | {best:.2%} ep.{epoch} | {drop:.2f} p.p. | {diag} |".format(
+            "| {name} | {test:.2%} | {gap:.2f} p.p. | {best:.2%} ep.{epoch} | {drop:.2f} p.p. | {selected} | {diag} |".format(
                 name=item["name"],
                 test=item["test_accuracy"],
                 gap=item["final_generalization_gap_pp"],
                 best=item["best_val_accuracy"],
                 epoch=item["best_val_accuracy_epoch"],
                 drop=item["final_val_accuracy_drop_from_best_pp"],
+                selected=item.get("selected_epoch", "-"),
                 diag=item["diagnosis"],
             )
         )
@@ -124,7 +143,7 @@ def _to_markdown(report: dict[str, object]) -> str:
         [
             "",
             "Criterio usado: gap final treino-validacao acima de 1.5 p.p. indica sinal leve; queda de validacao acima de 1 p.p. ou aumento relevante de data loss indicaria overfitting danoso.",
-            "A decisao para esta entrega e manter o modelo melhorado, mas registrar que early stopping na epoca de melhor validacao seria a proxima melhoria natural.",
+            "A decisao para esta entrega e manter o modelo resolvido com early stopping como resposta ao problema encontrado.",
             "",
         ]
     )

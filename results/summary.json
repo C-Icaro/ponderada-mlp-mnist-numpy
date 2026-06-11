@@ -26,8 +26,13 @@
     "final_val_accuracy": 0.9625,
     "final_val_loss": 0.13801303505897522,
     "final_val_data_loss": 0.13801303505897522,
-    "final_train_data_loss": 0.11202467232942581,
-    "final_train_accuracy": 0.9676
+    "final_train_data_loss": 0.10735976696014404,
+    "final_train_accuracy": 0.9691,
+    "epochs_run": 8,
+    "selected_epoch": 8,
+    "stopped_epoch": null,
+    "restored_best_weights": false,
+    "best_monitor_value": null
   },
   {
     "name": "final_relu_128_64",
@@ -56,8 +61,13 @@
     "final_val_accuracy": 0.9709,
     "final_val_loss": 0.0984858050942421,
     "final_val_data_loss": 0.0984858050942421,
-    "final_train_data_loss": 0.05062011256814003,
-    "final_train_accuracy": 0.9862
+    "final_train_data_loss": 0.05098526552319527,
+    "final_train_accuracy": 0.9858,
+    "epochs_run": 10,
+    "selected_epoch": 10,
+    "stopped_epoch": null,
+    "restored_best_weights": false,
+    "best_monitor_value": null
   },
   {
     "name": "improved_relu_256_128_momentum",
@@ -86,7 +96,53 @@
     "final_val_accuracy": 0.9797,
     "final_val_loss": 0.11767445132136345,
     "final_val_data_loss": 0.07709967344999313,
-    "final_train_data_loss": 0.0032309931702911854,
-    "final_train_accuracy": 0.9999
+    "final_train_data_loss": 0.002960697514936328,
+    "final_train_accuracy": 1.0,
+    "epochs_run": 15,
+    "selected_epoch": 15,
+    "stopped_epoch": null,
+    "restored_best_weights": false,
+    "best_monitor_value": null
+  },
+  {
+    "name": "resolved_relu_256_128_l2_earlystop",
+    "hidden_layers": [
+      256,
+      128
+    ],
+    "activation": "relu",
+    "learning_rate": 0.05,
+    "learning_rate_decay": 0.97,
+    "momentum": 0.9,
+    "epochs": 25,
+    "batch_size": 128,
+    "l2": 0.001,
+    "seed": 84,
+    "early_stopping": true,
+    "patience": 3,
+    "monitor": "val_data_loss",
+    "mode": "min",
+    "min_delta": 0.0,
+    "restore_best_weights": true,
+    "layer_sizes": [
+      784,
+      256,
+      128,
+      10
+    ],
+    "test_loss": 0.18066605925559998,
+    "test_data_loss": 0.06937826424837112,
+    "test_regularization_loss": 0.11128779500722885,
+    "test_accuracy": 0.9786,
+    "final_val_accuracy": 0.9786,
+    "final_val_loss": 0.18728898465633392,
+    "final_val_data_loss": 0.07600118964910507,
+    "final_train_data_loss": 0.040536221116781235,
+    "final_train_accuracy": 0.9906,
+    "epochs_run": 11,
+    "selected_epoch": 8,
+    "stopped_epoch": 11,
+    "restored_best_weights": true,
+    "best_monitor_value": 0.07600118964910507
   }
 ]

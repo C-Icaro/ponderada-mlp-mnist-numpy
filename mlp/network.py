@@ -43,6 +43,10 @@ class MLPClassifier:
         self.activation: Activation = get_activation(activation)
         self.rng = np.random.default_rng(seed)
         self.params: dict[str, Array] = {}
+        self.best_epoch_: int | None = None
+        self.best_monitor_value_: float | None = None
+        self.stopped_epoch_: int | None = None
+        self.restored_best_weights_: bool = False
         self._init_parameters()
 
     @property
@@ -124,17 +128,34 @@ class MLPClassifier:
         shuffle: bool = True,
         seed: int = 42,
         train_metric_sample_size: int | None = None,
+        early_stopping: bool = False,
+        patience: int = 3,
+        monitor: str = "val_data_loss",
+        mode: str = "min",
+        min_delta: float = 0.0,
+        restore_best_weights: bool = True,
         verbose: bool = True,
     ) -> list[dict[str, float]]:
         if epochs <= 0:
             raise ValueError("epochs must be positive.")
         if batch_size <= 0:
             raise ValueError("batch_size must be positive.")
+        if patience <= 0:
+            raise ValueError("patience must be positive.")
+        if mode not in {"min", "max"}:
+            raise ValueError("mode must be 'min' or 'max'.")
 
         optimizer = SGD(learning_rate=learning_rate, momentum=momentum)
         rng = np.random.default_rng(seed)
         history: list[dict[str, float]] = []
         n_samples = X_train.shape[0]
+        best_params: dict[str, Array] | None = None
+        best_value = np.inf if mode == "min" else -np.inf
+        epochs_without_improvement = 0
+        self.best_epoch_ = None
+        self.best_monitor_value_ = None
+        self.stopped_epoch_ = None
+        self.restored_best_weights_ = False
 
         for epoch in range(1, epochs + 1):
             optimizer.learning_rate = learning_rate * (learning_rate_decay ** (epoch - 1))
@@ -172,6 +193,28 @@ class MLPClassifier:
                 row["val_regularization_loss"] = val_metrics["regularization_loss"]
                 row["val_accuracy"] = val_metrics["accuracy"]
 
+            if early_stopping:
+                if monitor not in row:
+                    raise ValueError(f"Cannot monitor {monitor!r}; available metrics: {sorted(row)}")
+                current_value = row[monitor]
+                improved = (
+                    current_value < best_value - min_delta
+                    if mode == "min"
+                    else current_value > best_value + min_delta
+                )
+                if improved:
+                    best_value = current_value
+                    epochs_without_improvement = 0
+                    best_params = {name: value.copy() for name, value in self.params.items()}
+                    self.best_epoch_ = epoch
+                    self.best_monitor_value_ = float(current_value)
+                    row["is_best_checkpoint"] = 1.0
+                else:
+                    epochs_without_improvement += 1
+                    row["is_best_checkpoint"] = 0.0
+                row["best_monitor_value"] = float(best_value)
+                row["epochs_without_improvement"] = float(epochs_without_improvement)
+
             history.append(row)
             if verbose:
                 msg = (
@@ -181,6 +224,14 @@ class MLPClassifier:
                 if "val_accuracy" in row:
                     msg += f" val_acc={row['val_accuracy']:.4f}"
                 print(msg)
+
+            if early_stopping and epochs_without_improvement >= patience:
+                self.stopped_epoch_ = epoch
+                history[-1]["early_stop_triggered"] = 1.0
+                if restore_best_weights and best_params is not None:
+                    self.params = {name: value.copy() for name, value in best_params.items()}
+                    self.restored_best_weights_ = True
+                break
 
         return history
 

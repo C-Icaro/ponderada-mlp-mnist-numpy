@@ -38,4 +38,17 @@ epoch 13/15 loss=0.0464 acc=0.9998 val_acc=0.9801
 epoch 14/15 loss=0.0445 acc=1.0000 val_acc=0.9786
 epoch 15/15 loss=0.0438 acc=0.9999 val_acc=0.9797
 
+== resolved_relu_256_128_l2_earlystop ==
+epoch 01/25 loss=0.4656 acc=0.9555 val_acc=0.9518
+epoch 02/25 loss=0.3345 acc=0.9749 val_acc=0.9678
+epoch 03/25 loss=0.2770 acc=0.9785 val_acc=0.9714
+epoch 04/25 loss=0.2517 acc=0.9749 val_acc=0.9652
+epoch 05/25 loss=0.2024 acc=0.9847 val_acc=0.9726
+epoch 06/25 loss=0.1792 acc=0.9880 val_acc=0.9767
+epoch 07/25 loss=0.1660 acc=0.9888 val_acc=0.9759
+epoch 08/25 loss=0.1601 acc=0.9872 val_acc=0.9786
+epoch 09/25 loss=0.1497 acc=0.9892 val_acc=0.9766
+epoch 10/25 loss=0.1432 acc=0.9891 val_acc=0.9779
+epoch 11/25 loss=0.1416 acc=0.9906 val_acc=0.9766
+
 Resumo salvo em results\summary.json
