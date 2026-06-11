@@ -1,6 +1,7 @@
 import numpy as np
 
 from mlp import MLPClassifier
+from mlp.gradient_check import gradient_check, summarize_gradient_check
 
 
 def test_gradient_check_small_network():
@@ -31,6 +32,20 @@ def test_gradient_check_small_network():
         numerical = (loss_plus - loss_minus) / (2 * epsilon)
         analytical = grads[name][index]
         np.testing.assert_allclose(analytical, numerical, rtol=1e-2, atol=1e-3)
+
+
+def test_reusable_gradient_check_summary_passes():
+    rng = np.random.default_rng(13)
+    X = rng.normal(size=(5, 4)).astype(np.float32)
+    y = np.array([0, 1, 2, 1, 0])
+    model = MLPClassifier([4, 6, 5, 3], activation="tanh", seed=3)
+
+    results = gradient_check(model, X, y, max_checks_per_parameter=2, seed=9)
+    summary = summarize_gradient_check(results)
+
+    assert summary["passed"]
+    assert summary["num_checks"] == 12
+    assert summary["max_relative_error"] < 1e-2
 
 
 def test_training_reduces_toy_loss():
